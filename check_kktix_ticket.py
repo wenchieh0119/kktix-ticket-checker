@@ -2,14 +2,15 @@ import requests
 import re
 import json
 import time
-
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 def check_kktix_ticket(event_url):
     headers = {
         "User-Agent": "Mozilla/5.0"
     }
 
     print(f"🔍 正在檢查票務狀態：{event_url}")
-    response = requests.get(event_url, headers=headers)
+    response = requests.get(event_url, headers=headers, verify=False)
 
     if response.status_code != 200:
         print(f"⚠️ 無法取得頁面，狀態碼：{response.status_code}")
