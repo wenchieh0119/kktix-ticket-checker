@@ -9,16 +9,14 @@ from flask import Flask
 # 關閉 SSL 警告
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# 建立 Flask app
 app = Flask(__name__)
 
-# 假的網頁首頁
 @app.route('/')
 def home():
     return "✅ KKTIX 監控中！每 5 秒檢查一次票務狀態"
 
-# 背景任務：每 5 秒檢查票
 def ticket_checker():
+    print("🧵 背景執行緒已啟動！準備開始抓票...")
     event_url = "https://kktix.com/events/16db8dfa/registrations/new"
     while True:
         print(f"🔍 正在檢查票務狀態：{event_url}")
@@ -28,7 +26,7 @@ def ticket_checker():
                 print(f"⚠️ 無法取得頁面，狀態碼：{response.status_code}")
             else:
                 html = response.text
-                match = re.search(r'window\.__INITIAL_STATE__ = ({.*?});', html)
+                match = re.search(r'window\\.__INITIAL_STATE__ = ({.*?});', html)
                 if match:
                     data = json.loads(match.group(1))
                     tickets = data.get("registration", {}).get("ticket_types", [])
@@ -46,7 +44,8 @@ def ticket_checker():
         time.sleep(5)
 
 if __name__ == '__main__':
-    # 開啟背景執行緒跑票務檢查
+    print("🚀 啟動 Flask 與背景票務任務...")
+    # 啟動背景執行緒
     threading.Thread(target=ticket_checker, daemon=True).start()
-    # 啟動 Flask Web Server
+    # 啟動 Flask Server
     app.run(host='0.0.0.0', port=10000)
