@@ -1,0 +1,6 @@
+services:
+  - type: worker
+    name: kktix-ticket-checker
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python check_kktix_ticket.py"
