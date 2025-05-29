@@ -1,32 +1,30 @@
 import threading
 import time
-import requests
 import re
 import json
-import urllib3
+import cloudscraper
 from flask import Flask
-
-# 關閉 SSL 警告
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "✅ KKTIX 監控中！每 5 秒檢查一次票務狀態"
+    return "✅ KKTIX 監控中（使用 cloudscraper 模擬瀏覽器，解決 403）"
 
 def ticket_checker():
     print("🧵 背景執行緒已啟動！準備開始抓票...")
     event_url = "https://kktix.com/events/16db8dfa/registrations/new"
+    scraper = cloudscraper.create_scraper()  # 模擬真實瀏覽器，繞過 Cloudflare
+
     while True:
         print(f"🔍 正在檢查票務狀態：{event_url}")
         try:
-            response = requests.get(event_url, headers={"User-Agent": "Mozilla/5.0"}, verify=False)
+            response = scraper.get(event_url)
             if response.status_code != 200:
                 print(f"⚠️ 無法取得頁面，狀態碼：{response.status_code}")
             else:
                 html = response.text
-                match = re.search(r'window\\.__INITIAL_STATE__ = ({.*?});', html)
+                match = re.search(r'window\.__INITIAL_STATE__ = ({.*?});', html)
                 if match:
                     data = json.loads(match.group(1))
                     tickets = data.get("registration", {}).get("ticket_types", [])
@@ -45,7 +43,5 @@ def ticket_checker():
 
 if __name__ == '__main__':
     print("🚀 啟動 Flask 與背景票務任務...")
-    # 啟動背景執行緒
     threading.Thread(target=ticket_checker, daemon=True).start()
-    # 啟動 Flask Server
     app.run(host='0.0.0.0', port=10000)
